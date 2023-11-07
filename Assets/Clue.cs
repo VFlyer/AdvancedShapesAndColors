@@ -6,7 +6,7 @@ public class Clue
 {
     private string[][] clue;
     private bool positive;
-	public Clue(string[][] clue, bool positive)
+	public Clue(string[][] clue, bool positive = true)
     {
         this.clue = clue;
         this.positive = positive;

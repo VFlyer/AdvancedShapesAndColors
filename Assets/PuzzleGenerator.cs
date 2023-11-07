@@ -48,13 +48,7 @@ public class PuzzleGenerator {
                 //TODO: Print the possible combinations w/ the clue being generated at the time
                 foreach(List<List<string>> poss in possible)
                 {
-                    foreach(List<string> p in poss)
-                    {
-                        string str = "";
-                        foreach (string s in p)
-                            str += s + " ";
-                        Debug.LogFormat("{0}", str);
-                    }
+                    Debug.LogFormat(poss.Select(a => string.Format("[{0}]", a.Join())).Join(";"));
                 }
             }
         }
@@ -86,15 +80,22 @@ public class PuzzleGenerator {
     {
         return sol;
     }
-    // Returns a randomly generated solution
-    private string[][] getInitialSolution()
+    // Returns a list of all possible combinations based on the shapes and colors displayed.
+    public IEnumerable<string> GetAllPossibleCombinations()
     {
-        List<string> choices = new List<string>();
+        var output = new List<string>();
         foreach (char let in letters)
         {
             foreach (char num in numbers)
-                choices.Add(let + "" + num);
+                output.Add(let + "" + num);
         }
+        return output;
+    }
+
+    // Returns a randomly generated solution
+    private string[][] getInitialSolution()
+    {
+        List<string> choices = GetAllPossibleCombinations().ToList();
         choices.Shuffle();
         string[][] solution = new string[gridSize][];
         for (int i = 0; i < gridSize; i++)
@@ -122,12 +123,7 @@ public class PuzzleGenerator {
             possible.Add(new List<List<string>>());
             for(int j = 0; j < gridSize; j++)
             {
-                possible[i].Add(new List<string>());
-                foreach(char let in letters)
-                {
-                    foreach (char num in numbers)
-                        possible[i][j].Add(let + "" + num);
-                }
+                possible[i].Add(GetAllPossibleCombinations().ToList());
             }
         }
         return possible;
@@ -1179,5 +1175,12 @@ public class PuzzleGenerator {
                 str += space + " ";
             Debug.LogFormat("{0}", str);
         }
+    }
+
+    private string[][] SubstituteClue(string[][] previousClue)
+    {
+        var output = new string[previousClue.Length][];
+
+        return output;
     }
 }

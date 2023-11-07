@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
-public class shapesAndColors : MonoBehaviour {
+public class shapesAndColorsAdvanced : MonoBehaviour {
 	public KMBombModule module;
 	public new KMAudio audio;
 	public KMSelectable ClueUp;
@@ -39,8 +39,16 @@ public class shapesAndColors : MonoBehaviour {
 	private string[][] submission;
 	private int colorCursor = -1;
 	private int shapeCursor = -1;
-	private bool notStart = false;
-
+	private bool notStart = false, solved = false;
+	static readonly string[] posAbbrev = new[] { "TL", "TM", "TR", "ML", "MM", "MR", "BL", "BM", "BR" };
+	void QuickLog(string toLog, params object[] args)
+    {
+		Debug.LogFormat("[{0} #{1}] {2}", module.ModuleDisplayName, moduleId, string.Format(toLog, args));
+	}
+	void QuickLogDebug(string toLog, params object[] args)
+    {
+		Debug.LogFormat("<{0} #{1}> {2}", module.ModuleDisplayName, moduleId, string.Format(toLog, args));
+	}
 	void Awake()
 	{
 		moduleId = moduleIdCounter++;
@@ -57,14 +65,14 @@ public class shapesAndColors : MonoBehaviour {
 		textClues = gen.GeneratePuzzle().Shuffle();
 		solution = gen.getSolution();
 		clueCursor = 0;
-		Debug.LogFormat("[Shapes and Colors #{0}] Solution:", moduleId);
+		QuickLog("Solution:");
 		for (int i = 0; i < solution.Length; i++)
-			Debug.LogFormat("[Shapes and Colors #{0}] {1} {2} {3}", moduleId, solution[i][0], solution[i][1], solution[i][2]);
+			QuickLog("{0}", solution[i].Join());
 
 		for (int i = 0; i < textClues.Count; i++)
 		{
 			string[][] clue = textClues[i].getClue();
-			Debug.LogFormat("[Shapes and Colors #{0}] {1} Clue #{2}:", moduleId, textClues[i].isPositive() ? "Positive" : "Negative", (i + 1));			
+			Debug.LogFormat("Clue #{0} ({1}):", (i + 1), textClues[i].isPositive() ? "Positive" : "Negative");			
 			for (int row = 0; row < 3; row++)
 			{
 				string output;
@@ -81,7 +89,7 @@ public class shapesAndColors : MonoBehaviour {
 							output = output + " " + clue[row][col];
 					}
 				}
-				Debug.LogFormat("[Shapes and Colors #{0}] {1}", moduleId, output);
+				Debug.LogFormat("{0}", output);
 			}
 		}
 		clues = new List<Material[]>();
@@ -219,6 +227,9 @@ public class shapesAndColors : MonoBehaviour {
 		shapeSelector.transform.localPosition = new Vector3(0f, 0f, 0f);
 		colorCursor = -1;
 		shapeCursor = -1;
+		Debug.LogFormat("[Shapes and Colors #{0}] Submitted:", moduleId);
+		for (int i = 0; i < submission.Length; i++)
+			Debug.LogFormat("[Shapes and Colors #{0}] {1}", moduleId, submission[i].Join());
 		List<int> notFilled = new List<int>();
 		for (int i = 0; i < submission.Length; i++)
 		{
@@ -230,60 +241,68 @@ public class shapesAndColors : MonoBehaviour {
 				submitLog = submitLog + "" + submission[i][j] + " ";
 			}
 		}
-		if (notFilled.Count == 0)
+		if (!notFilled.Any())
 		{
 			//Next, check if all the clues can fit on the grid at least once.
-			bool flag = true;
 			bool strike = false;
 			clueCursor = -1;
-			foreach (Clue clueInfo in textClues)
+            for (int n = 0; n < textClues.Count; n++)
 			{
-				string[][] clue = clueInfo.getClue();
+                Clue clueInfo = textClues[n];
+                string[][] clue = clueInfo.getClue();
 				clueCursor++;
 				displayClue();
 				audio.PlaySoundAtTransform(ClueDown.name, transform);
 				yield return new WaitForSeconds(0.5f);
+				List<int> spacesToLight = new List<int>();
+				bool foundItem = false;
+				var missingVCnt = submission.Length - clue.Length + 1;
+                for (var dy = 0; dy < missingVCnt; dy++)
+                {
+					var missingHCnt = submission[dy].Length - clue[dy % clue.Length].Length + 1;
+                    for (var dx = 0; dx < missingHCnt; dx++)
+                    {
+						//QuickLogDebug("{0}, {1}", dy, dx);
+						var countMatch = 0;
+						spacesToLight.Clear();
+						for (var y = 0; y < clue.Length; y++)
+                        {
+							for (var x = 0; x < clue[y].Length; x++)
+                            {
+								if (clue[y][x] == "KK") continue;
+								if (clue[y][x] == "WW" || doesFit(submission[y + dy][x + dx], clue[y][x]))
+                                {
+									countMatch++;
+									spacesToLight.Add(3 * (y + dy) + x + dx);
+                                }
+                            }
+                        }
+						QuickLogDebug("#{0} (+{1}, +{2}): {3}/{4}", n + 1, dy, dx, countMatch, clue.Sum(a => a.Where(b => b != "KK").Count()));
+						if (countMatch >= clue.Sum(a => a.Where(b => b != "KK").Count()))
+						{
+							foundItem = true;
+							break;
+						}
+                    }
+					if (foundItem)
+						break;
+				}
+
+
 				if (clueInfo.isPositive())
 				{
-					for (int i = 0; i <= (submission.Length - clue.Length); i++)
+					if (foundItem)
 					{
-						for (int j = 0; j <= (submission[i].Length - clue[i % clue.Length].Length); j++)
-						{
-							flag = true;
-							List<int> spacesToLight = new List<int>();
-							for (int a = 0; a < clue.Length; a++)
-							{
-								for (int b = 0; b < clue[a].Length; b++)
-								{
-									if (!(clue[a][b].Equals("KK")) && !(clue[a][b].Equals("WW")) && !(doesFit(submission[i + a][j + b], clue[a][b])))
-									{
-										flag = false;
-										break;
-									}
-									if (!(clue[a][b].Equals("KK")))
-										spacesToLight.Add(((i + a) * 3) + (j + b));
-								}
-								if (!flag)
-									break;
-							}
-						//skip1:
-							if (flag)
-							{
-								audio.PlaySoundAtTransform(ClueUp.name, transform);
-								foreach (int space in spacesToLight)
-									backSpaces[space].material = images[23];
-								yield return new WaitForSeconds(0.5f);
-								foreach (MeshRenderer backSpace in backSpaces)
-									backSpace.material = images[1];
-								break;
-							}
-						}
-						if (flag)
-							break;
+						audio.PlaySoundAtTransform(ClueUp.name, transform);
+						foreach (int space in spacesToLight)
+							backSpaces[space].material = images[23];
+						yield return new WaitForSeconds(0.5f);
+						foreach (MeshRenderer backSpace in backSpaces)
+							backSpace.material = images[1];
 					}
-				//skip2:
-					if (!(flag))
+					else
 					{
+						QuickLog("Clue #{0} violated. Clue must be found, not broken.", n + 1);
 						module.HandleStrike();
 						foreach (MeshRenderer backSpace in backSpaces)
 							backSpace.material = images[getMat("R")];
@@ -297,48 +316,23 @@ public class shapesAndColors : MonoBehaviour {
 				}
 				else
 				{
-					for (int i = 0; i <= (submission.Length - clue.Length); i++)
+					if (foundItem)
 					{
-						for (int j = 0; j <= (submission[i].Length - clue[i % clue.Length].Length); j++)
-						{
-							flag = true;
-							List<int> spacesToLight = new List<int>();
-							for (int a = 0; a < clue.Length; a++)
-							{
-								for (int b = 0; b < clue[a].Length; b++)
-								{
-									if (!(clue[a][b].Equals("KK")) && !(clue[a][b].Equals("WW")) && !(doesFit(submission[i + a][j + b], clue[a][b])))
-									{
-										flag = false;
-										break;
-									}
-									if (!(clue[a][b].Equals("KK")))
-										spacesToLight.Add(((i + a) * 3) + (j + b));
-								}
-								if (!flag)
-									break;
-							}
-							if (flag)
-							{
-								module.HandleStrike();
-								foreach (int space in spacesToLight)
-									backSpaces[space].material = images[getMat("R")];
-								yield return new WaitForSeconds(5.0f);
-								foreach (MeshRenderer backSpace in backSpaces)
-									backSpace.material = images[1];
-								StartCoroutine(generatePuzzle());
-								strike = true;
-								break;
-							}
-						}
-						if (strike)
-							break;
+						QuickLog("Clue #{0} violated. Clue must be broken, not found.", n + 1);
+						module.HandleStrike();
+						foreach (int space in spacesToLight)
+							backSpaces[space].material = images[getMat("R")];
+						yield return new WaitForSeconds(5.0f);
+						foreach (MeshRenderer backSpace in backSpaces)
+							backSpace.material = images[1];
+						StartCoroutine(generatePuzzle());
+						strike = true;
+						break;
 					}
-					if (!(flag))
+					else
 					{
 						audio.PlaySoundAtTransform(ClueUp.name, transform);
 						//Maybe make the clue screen green?
-
 						yield return new WaitForSeconds(0.5f);
 					}
 				}
@@ -349,9 +343,9 @@ public class shapesAndColors : MonoBehaviour {
 				foreach (MeshRenderer clueSpace in clueMeshRender)
 					clueSpace.material = images[1];
 				audio.PlaySoundAtTransform(ClueDown.name, transform);
+				moduleBackground.material = moduleBackgroundMats[0];
 				yield return new WaitForSeconds(0.5f);
 				string[] comboList = { "RC", "RT", "RD", "YC", "YT", "YD", "BC", "BT", "BD" };
-
 				List<int> missed = new List<int>();
 				for (int i = 0; i < comboList.Length; i++)
 				{
@@ -383,21 +377,28 @@ public class shapesAndColors : MonoBehaviour {
 				{
 					foreach (MeshRenderer space in gridMeshRender)
 						space.transform.localScale = new Vector3(0f, 0f, 0f);
+					QuickLog("Submission valid.");
 					module.HandlePass();
+					solved = true;
 					audio.PlaySoundAtTransform(ClueUp.name, transform);
 					audio.PlaySoundAtTransform(ClueDown.name, transform);
+					moduleBackground.material = moduleBackgroundMats[1];
 					yield return new WaitForSeconds(0.25f);
 					audio.PlaySoundAtTransform(ClueUp.name, transform);
 					audio.PlaySoundAtTransform(ClueDown.name, transform);
+					moduleBackground.material = moduleBackgroundMats[0];
 					yield return new WaitForSeconds(0.125f);
 					audio.PlaySoundAtTransform(ClueUp.name, transform);
 					audio.PlaySoundAtTransform(ClueDown.name, transform);
+					moduleBackground.material = moduleBackgroundMats[1];
 					yield return new WaitForSeconds(0.125f);
 					audio.PlaySoundAtTransform(ClueUp.name, transform);
 					audio.PlaySoundAtTransform(ClueDown.name, transform);
+					moduleBackground.material = moduleBackgroundMats[0];
 				}
 				else
 				{
+					QuickLog("Following positions contain a repeated shape: {0}", missed.Select(a => posAbbrev[a]).Join());
 					module.HandleStrike();
 					foreach (int blank in missed)
 						clueMeshRender[blank].material = images[getMat("R")];
@@ -418,6 +419,7 @@ public class shapesAndColors : MonoBehaviour {
 		}
 		else
 		{
+			QuickLog("Empty tiles detected: {0}", notFilled.Select(a => posAbbrev[a]).Join());
 			module.HandleStrike();
 			foreach (int space in notFilled)
 				backSpaces[space].material = images[getMat("R")];
@@ -495,8 +497,32 @@ public class shapesAndColors : MonoBehaviour {
 #pragma warning restore 414
 	IEnumerator ProcessTwitchCommand(string command)
 	{
+		var upperCmd = command.ToUpper();
 		string[] param = command.ToUpper().Split(' ');
-		if ((Regex.IsMatch(param[0], @"^\s*PRESS\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant) || Regex.IsMatch(param[0], @"^\s*P\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)) && param.Length > 1)
+		var rgxMatchCycle = Regex.Match(upperCmd, @"^CYCLE(\s(UP?|D(OWN)?))?$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+		if (rgxMatchCycle.Success)
+        {
+			var matchCycle = rgxMatchCycle.Value.Split();
+			if (matchCycle.Length == 1 || matchCycle.Last().StartsWith("D"))
+            {
+				yield return null;
+				for (var x = 0; x < textClues.Count; x++)
+				{
+					yield return "trywaitcancel 2";
+					ClueDown.OnInteract();
+				}
+            }
+			else
+			{
+				yield return null;
+				for (var x = 0; x < textClues.Count; x++)
+				{
+					yield return "trywaitcancel 2";
+					ClueUp.OnInteract();
+				}
+			}
+		}
+		else if ((Regex.IsMatch(param[0], @"^\s*PRESS\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant) || Regex.IsMatch(param[0], @"^\s*P\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)) && param.Length > 1)
 		{
 			if (isButton(param))
 			{
@@ -567,6 +593,8 @@ public class shapesAndColors : MonoBehaviour {
 		{
 			yield return null;
 			submit.OnInteract();
+			yield return "strike";
+			yield return "solve";
 		}
 		else if (Regex.IsMatch(param[0], @"^\s*CLEAR\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant) && param.Length == 1)
 		{
@@ -619,5 +647,38 @@ public class shapesAndColors : MonoBehaviour {
 		}
 		return true;
 	}
-	
+	IEnumerator TwitchHandleForcedSolve()
+    {
+		string colorsAbbrev = "RYB";
+		string shapesAbbrev = "CTD";
+		while (Enumerable.Range(0, 3).Any(a => !submission[a].SequenceEqual(solution[a])))
+        {
+			for (var x = 0; x < 3; x++)
+            {
+				for (var y = 0; y < 3; y++)
+				{
+					if (submission[x][y] == solution[x][y]) continue;
+
+					var curSolution = solution[x][y];
+					var colorIdx = colorsAbbrev.IndexOf(curSolution[0]);
+					var shapeIdx = shapesAbbrev.IndexOf(curSolution[1]);
+					if (colorIdx != colorCursor)
+					{
+						colorInput[colorIdx].OnInteract();
+						yield return new WaitForSeconds(0.1f);
+					}
+					if (shapeIdx != shapeCursor)
+					{
+						shapeInput[shapeIdx].OnInteract();
+						yield return new WaitForSeconds(0.1f);
+					}
+					grid[3 * x + y].OnInteract();
+					yield return new WaitForSeconds(0.1f);
+				}
+			}
+        }
+		submit.OnInteract();
+		while (!solved)
+			yield return true;
+    }
 }

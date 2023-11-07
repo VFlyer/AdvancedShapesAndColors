@@ -207,6 +207,11 @@ Prefab:
       propertyPath: AudioClips.Array.data[6]
       value: 
       objectReference: {fileID: 8300000, guid: ddfbab83ace2eb744a80401e9d429e3d, type: 3}
+    - target: {fileID: 114848120511536268, guid: 8814ea52310d2614a9feda02ec355ae4,
+        type: 2}
+      propertyPath: TwitchPlaysMode
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 8814ea52310d2614a9feda02ec355ae4, type: 2}
   m_IsPrefabParent: 0
@@ -314,26 +319,6 @@ Prefab:
       propertyPath: m_RootOrder
       value: 3
       objectReference: {fileID: 0}
-    - target: {fileID: 114403041159362748, guid: 25616d5dd118dfe4b8e91a59e87c4759,
-        type: 2}
-      propertyPath: moduleBackgroundMats.Array.data[0]
-      value: 
-      objectReference: {fileID: 2100000, guid: 26cdee844cb231740941635a5e5962c7, type: 2}
-    - target: {fileID: 114403041159362748, guid: 25616d5dd118dfe4b8e91a59e87c4759,
-        type: 2}
-      propertyPath: moduleBackgroundMats.Array.data[1]
-      value: 
-      objectReference: {fileID: 2100000, guid: c8b93cfb5b30d3e469db754555fd0eb4, type: 2}
-    - target: {fileID: 23736321006223448, guid: 25616d5dd118dfe4b8e91a59e87c4759,
-        type: 2}
-      propertyPath: m_Materials.Array.data[0]
-      value: 
-      objectReference: {fileID: 2100000, guid: f3a2e168be1008a4eb4f9b7dce315ebe, type: 2}
-    - target: {fileID: 23065516832465322, guid: 25616d5dd118dfe4b8e91a59e87c4759,
-        type: 2}
-      propertyPath: m_Materials.Array.data[0]
-      value: 
-      objectReference: {fileID: 2100000, guid: 253fd7166c09da742abb70dd3c2ff543, type: 2}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: 25616d5dd118dfe4b8e91a59e87c4759, type: 2}
   m_IsPrefabParent: 0

@@ -2211,7 +2211,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_Materials:
-  - {fileID: 2100000, guid: f3a2e168be1008a4eb4f9b7dce315ebe, type: 2}
+  - {fileID: 2100000, guid: 253fd7166c09da742abb70dd3c2ff543, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4562,8 +4562,8 @@ MonoBehaviour:
   - {fileID: 2100000, guid: 4416af74f8127bc41a7bce621c981128, type: 2}
   - {fileID: 2100000, guid: 4479344969a79c74cbf37244a52fb4d1, type: 2}
   moduleBackgroundMats:
-  - {fileID: 2100000, guid: 61b4b662a1c3e174784f2f6ef2543353, type: 2}
-  - {fileID: 2100000, guid: f3a2e168be1008a4eb4f9b7dce315ebe, type: 2}
+  - {fileID: 2100000, guid: 26cdee844cb231740941635a5e5962c7, type: 2}
+  - {fileID: 2100000, guid: c8b93cfb5b30d3e469db754555fd0eb4, type: 2}
   LoadingSFX: {fileID: 8300000, guid: 5628c6a8053608647b0baf739ffa0d44, type: 3}
   BlinkSFX: {fileID: 8300000, guid: 08573c3c756c8294da831a38267f2476, type: 3}
   StampSFX: {fileID: 8300000, guid: 6de027d0ed31edc42b03aa76d8f4b2df, type: 3}
