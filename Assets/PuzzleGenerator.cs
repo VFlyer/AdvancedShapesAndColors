@@ -27,9 +27,11 @@ public class PuzzleGenerator {
                 string[][] clue = getBlankClue();
                 string clueElement = getFirstClueElement(solution[row][col], possible[row][col]);
                 string[][] negClue = getNegativeClue(solution, possible, row, col, clueElement);
+                //negClue = null;
                 if(negClue != null)
                 {
                     negativeClues.Add(negClue);
+                    Debug.LogFormat("NEGATIVE");
                     printClue(negClue);
                 }
                 else
@@ -40,6 +42,7 @@ public class PuzzleGenerator {
                     removePossibleCombinations(possible, clue); //Gen 2
                     removePossibleCombinations(possible);   // Gen 2
                     clues.Add(clue);
+                    Debug.LogFormat("POSITIVE");
                     printClue(clue);
                 }
                 foreach (string[][] negativeClue in negativeClues)
@@ -70,8 +73,10 @@ public class PuzzleGenerator {
             removeRedundantClueElements(clues, negativeClues); // Gen 5
             removeRedundantSpaces(clues, negativeClues);   // Gen 6
         }
+        
         if (negativeClues.Count == 0)
             goto tryagain;
+            
         for (int i = 0; i < clues.Count; i++)
             clues[i] = shrinkClue(clues[i]);
         //turnSpacesBlack(clues);         // Gen 7
@@ -983,15 +988,7 @@ public class PuzzleGenerator {
             }
         }
         positions.RemoveAt(positions.IndexOf((row * gridSize) + col));
-        List<int[]> elementPositions = new List<int[]>();
-        for (int i = 0; i < clue.Length; i++)
-        {
-            for (int j = 0; j < clue[i].Length; j++)
-            {
-                if (!(clue[i][j].Equals("WW") || clue[i][j].Equals("KK")))
-                    elementPositions.Add(new int[] { i, j });
-            }
-        }
+        List<int[]> elementPositions = getElementPositions(clue);
         if (elementPositions.Count == 1)
         {
             for (int i = 0; i < (gridSize - clue.Length + 1); i++)
@@ -1015,7 +1012,7 @@ public class PuzzleGenerator {
                         if(onlyContainsElement(possible, clue[elementPositions[0][0]][elementPositions[0][1]], i + elementPositions[0][0], j + elementPositions[0][1]))
                             positions.Remove(((i + elementPositions[1][0]) * gridSize) + j + elementPositions[1][1]);
                         else if(onlyContainsElement(possible, clue[elementPositions[1][0]][elementPositions[1][1]], i + elementPositions[1][0], j + elementPositions[1][1]))
-                            positions.Remove(((i + elementPositions[0][0]) * gridSize) + j + elementPositions[0][1]);
+                            positions.Remove(((i + elementPositions[0][0]) * gridSize) + j + elementPositions[0][1]);    
                     }
                 }
             }
@@ -1029,7 +1026,7 @@ public class PuzzleGenerator {
         {
             foreach (string poss in possible[row][col])
             {
-                if (poss.Contains(element[1]))
+                if (poss.Contains(element.Substring(1)))
                     return false;
             }
         }
@@ -1046,9 +1043,9 @@ public class PuzzleGenerator {
     //Checks to see if the Negative Clue being used contradicts with the solution
     private bool isNegativeClueContradicting(string[][] solution, string[][] clue)
     {
-        for (int i = 0; i < (gridSize - clue.Length + 1); i++)
+        for (int i = 0; i <= (gridSize - clue.Length); i++)
         {
-            for (int j = 0; j < (gridSize - clue[0].Length + 1); j++)
+            for (int j = 0; j <= (gridSize - clue[0].Length); j++)
             {
                 if (canBePlaced(solution, clue, i, j))
                     return true;
@@ -1084,43 +1081,19 @@ public class PuzzleGenerator {
     private bool removePossibleCombinationsNegative(List<List<List<string>>> possible, string[][] clue)
     {
         bool f = false;
-        for (int i = 0; i <= (gridSize - clue.Length); i++)
+        for (int row = 0; row <= (gridSize - clue.Length); row++)
         {
-            for (int j = 0; j <= (gridSize - clue[0].Length); j++)
+            for (int col = 0; col <= (gridSize - clue[0].Length); col++)
             {
-                if(negativeCanBePlaced(possible, clue, i, j))
+                if(negativeCanBePlaced(possible, clue, row, col))
                 {
-                    for(int row = 0; row < clue.Length; row++)
-                    {
-                        for(int col = 0; col < clue[row].Length; col++)
-                        {
-                            if (!(clue[row][col].Equals("WW") || clue[row][col].Equals("KK")))
-                            {
-                                if (clue[row][col][0] == '-')
-                                {
-                                    for (int index = 0; index < possible[row + i][col + j].Count; index++)
-                                    {
-                                        if (!possible[row + i][col + j][index].Contains(clue[row][col].Substring(1)))
-                                        {
-                                            possible[row + i][col + j].RemoveAt(index--);
-                                            f = true;
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    for(int index = 0; index < possible[row + i][col + j].Count; index++)
-                                    {
-                                        if (possible[row + i][col + j][index].Contains(clue[row][col]))
-                                        {
-                                            possible[row + i][col + j].RemoveAt(index--);
-                                            f = true;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    List<int[]> elementPositions = getElementPositions(clue);
+                    if(elementPositions.Count == 1)
+                        f = f || removeNegativeElements(clue[elementPositions[0][0]][elementPositions[0][1]], possible, elementPositions[0][0] + row, elementPositions[0][1] + col);
+                    else if (onlyContainsElement(possible, clue[elementPositions[0][0]][elementPositions[0][1]], row + elementPositions[0][0], col + elementPositions[0][1]))
+                        f = f || removeNegativeElements(clue[elementPositions[1][0]][elementPositions[1][1]], possible, elementPositions[1][0] + row, elementPositions[1][1] + col);
+                    else if (onlyContainsElement(possible, clue[elementPositions[1][0]][elementPositions[1][1]], row + elementPositions[1][0], col + elementPositions[1][1]))
+                        f = f || removeNegativeElements(clue[elementPositions[0][0]][elementPositions[0][1]], possible, elementPositions[0][0] + row, elementPositions[0][1] + col);
                 }
             }
         }
@@ -1129,17 +1102,9 @@ public class PuzzleGenerator {
     // Checks if the clue can be placed onto the grid at that spot
     private bool negativeCanBePlaced(List<List<List<string>>> possible, string[][] clue, int row, int col)
     {
-        List<int[]> elementPositions = new List<int[]>();
-        for (int i = 0; i < clue.Length; i++)
-        {
-            for (int j = 0; j < clue[i].Length; j++)
-            {
-                if (!(clue[i][j].Equals("WW") || clue[i][j].Equals("KK")))
-                    elementPositions.Add(new int[] { i, j });
-            }
-        }
+        List<int[]> elementPositions = getElementPositions(clue);
         if (elementPositions.Count == 1)
-            canBePlaced(possible, clue, row, col);
+            return canBePlaced(possible, clue, row, col);
         else if (canBePlaced(possible, clue, row, col))
         {
             if (onlyContainsElement(possible, clue[elementPositions[0][0]][elementPositions[0][1]], row + elementPositions[0][0], col + elementPositions[0][1]))
@@ -1148,6 +1113,36 @@ public class PuzzleGenerator {
                 return true;
         }
         return false;
+    }
+    //Removes elements according to the element in a negative clue
+    private bool removeNegativeElements(string element, List<List<List<string>>> possible, int row, int col)
+    {
+        bool flag = false;
+        if (element[0] == '-')
+        {
+            for(int index = 0; index < possible[row][col].Count; index++)
+            {
+                if(!possible[row][col].Contains(element.Substring(1)))
+                {
+                    possible[row][col].RemoveAt(index);
+                    flag = true;
+                    index--;
+                }
+            }
+        }
+        else
+        {
+            for (int index = 0; index < possible[row][col].Count; index++)
+            {
+                if (possible[row][col].Contains(element))
+                {
+                    possible[row][col].RemoveAt(index);
+                    flag = true;
+                    index--;
+                }
+            }
+        }
+        return flag;
     }
     // Copies the array
     private string[][] copyArray(string[][] arr)
@@ -1180,4 +1175,19 @@ public class PuzzleGenerator {
             Debug.LogFormat("{0}", str);
         }
     }
+    //Returns the positions of each element
+    private List<int[]> getElementPositions(string[][] clue)
+    {
+        List<int[]> elementPositions = new List<int[]>();
+        for(int i = 0; i < clue.Length; i++)
+        {
+            for(int j = 0; j < clue[i].Length; j++)
+            {
+                if (!(clue[i][j].Equals("WW") || clue[i][j].Equals("KK")))
+                    elementPositions.Add(new int[] { i, j });
+            }
+        }
+        return elementPositions;
+    }
+
 }
